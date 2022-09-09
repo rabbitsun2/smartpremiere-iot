@@ -9,3 +9,5 @@
  
 #define SECRET_SSID "SmartLogistics_2G"
 #define SECRET_PASS "12345678"
+
+#define SECRET_MACHINE "026448f2-79d6-9eb1-2119-2ef9e6f232d4"

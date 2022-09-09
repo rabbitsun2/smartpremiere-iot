@@ -40,13 +40,15 @@ char pass[] = SECRET_PASS;    // your network password (use for WPA, or use as k
 int keyIndex = 0;            
 
 int status = WL_IDLE_STATUS;
+int ardu_status = 0;
+
 float temp, humi;
 String url;
 String host;
 String shock;
 String message;
 
-char server[] = "100.30.0.10";    // 네임서버: smartLogistics
+char server[] = "100.30.0.5";    // 네임서버: smartLogistics
 
 WiFiClient client;      // WifiClient 기본값 포트 80포트
 DHT11 dht11(DHT_PIN);   // 온습도 센서
@@ -85,96 +87,131 @@ void setup() {
 }
 
 void loop() {
-  
+
+  // 시리얼 가능 여부
+  if(Serial.available()){
+
+    switch(Serial.read()){
+
+      case '1':
+        ardu_status = 1;
+        break;
+        
+      case '0':
+        ardu_status = 0;
+        break;
+      
+    }
+      
+  }
+
+  // 프로그램 실행
+  op_program();
+
+}
+
+void op_program(){
+
   String postData;
   long duration, distance;
 
-  // 무선랜 접속 여부
-  while (client.available()) {
-    char c = client.read();
-    Serial.write(c);
-  }
-  
-  digitalWrite(TRIG_PIN, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(TRIG_PIN, LOW);
- 
-  duration = pulseIn(ECHO_PIN, HIGH);
-  distance = ((float)(340 * duration) / 1000) / 2;
-  
-  Serial.print("Duration:");
-  Serial.print(duration);
-  Serial.println();
-  Serial.print("Distance:");
-  Serial.print(distance);
-  Serial.println();
+  // 활성화 상태
+  if ( ardu_status == 1 ){
 
-  // 충격 감지 센서
-  if ( digitalRead( SHOCK_PIN ) == HIGH ){
-    // Serial.println("SHOCK!!!!");
-    shock = "SHOCK";
-  }else{
-    shock = "STD";
-  }
-
-  if ( distance > 500 ){
-    choose_led( CHOOSE_LED_GREEN );
-  }else{
-    choose_led( CHOOSE_LED_YELLOW );
-    delay(500);
+    // 무선랜 접속 여부
+    while (client.available()) {
+      char c = client.read();
+      Serial.write(c);
+    }
     
-    choose_led( CHOOSE_LED_RED );
-    delay(500);
-  }
-
-  // DHT 센서(온습도 센서)
-  dht_sensor();
-  delay(100);
-
-  // 메시지
-  message = "정상";
-  
-  // POST 호출
-  postData = "distance=";
-  postData = postData + String(distance);
-  postData = postData + "&duration=" + String(duration);
-  postData = postData + "&humi=" + String(humi);
-  postData = postData + "&temp=" + String(temp);
-  postData = postData + "&shock=" + shock;
-  postData = postData + "&machine_id=" + String(1);
-  postData = postData + "&message=" + message;
-
-  //Serial.println(postData);
-
-  // 호스트 설정
-  host = "Host: 100.30.0.10";
-  webconn.setHost(host);
-
-  // URL 설정
-  url = "POST /smartLogistics/index.php/iot/collect HTTP/1.1";
-  //url = "GET /smartLogistics/index.php/iot/collect?" + postData + " HTTP/1.1";
-  webconn.setUrl(url);
-
-  Serial.println(url);
-  
-  // 포트 설정
-  webconn.setPort(80);
-
-  // 웹 클라이언트 시작
-  webconn.httpPostConn(postData);
-  //webconn.httpGetConn();
-  delay(100);
-
-  // 연결이 끊겼을 때, 연결 종료
-  if (!client.connected()) {
+    digitalWrite(TRIG_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIG_PIN, LOW);
+   
+    duration = pulseIn(ECHO_PIN, HIGH);
+    distance = ((float)(340 * duration) / 1000) / 2;
+    
+    Serial.print("Duration:");
+    Serial.print(duration);
     Serial.println();
-    Serial.println("disconnecting from server.");
-    client.stop();
+    Serial.print("Distance:");
+    Serial.print(distance);
+    Serial.println();
+  
+    // 충격 감지 센서
+    if ( digitalRead( SHOCK_PIN ) == HIGH ){
+      // Serial.println("SHOCK!!!!");
+      shock = "SHOCK";
+    }else{
+      shock = "STD";
+    }
+  
+    if ( distance > 500 ){
+      choose_led( CHOOSE_LED_GREEN );
+    }else{
+      choose_led( CHOOSE_LED_YELLOW );
+      delay(500);
+      
+      choose_led( CHOOSE_LED_RED );
+      delay(500);
+    }
+  
+    // DHT 센서(온습도 센서)
+    dht_sensor();
+    delay(100);
+  
+    // 메시지
+    message = "정상";
+    
+    // POST 호출
+    postData = "distance=";
+    postData = postData + String(distance);
+    postData = postData + "&duration=" + String(duration);
+    postData = postData + "&humi=" + String(humi);
+    postData = postData + "&temp=" + String(temp);
+    postData = postData + "&shock=" + shock;
+    postData = postData + "&machine_id=" + String(1);
+    postData = postData + "&message=" + message;
+    postData = postData + "&uuid=" + SECRET_MACHINE;
+  
+    //Serial.println(postData);
+  
+    // 호스트 설정
+    host = "Host: 100.30.0.5";
+    webconn.setHost(host);
+  
+    // URL 설정
+    url = "POST /smartLogistics/index.php/iot/collect HTTP/1.1";
+    //url = "GET /smartLogistics/index.php/iot/collect?" + postData + " HTTP/1.1";
+    webconn.setUrl(url);
+  
+    Serial.println(url);
+    
+    // 포트 설정
+    webconn.setPort(80);
+  
+    // 웹 클라이언트 시작
+    webconn.httpPostConn(postData);
+    //webconn.httpGetConn();
+    delay(100);
+  
+    // 연결이 끊겼을 때, 연결 종료
+    if (!client.connected()) {
+      Serial.println();
+      Serial.println("disconnecting from server.");
+      client.stop();
+  
+      // do nothing forevermore:
+      while (true);
+    }
 
-    // do nothing forevermore:
-    while (true);
   }
-
+  // 비활성화 상태
+  else if ( ardu_status == 0 ){
+    Serial.println("disconnected Machine");
+    delay(1000);
+  }
+  
 }
 
 void wifiSetup(){
