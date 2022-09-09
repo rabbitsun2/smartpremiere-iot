@@ -1,6 +1,6 @@
-### Smart Premiere - Ai
+### Smart Premiere - IoT
 
-##### 1. 프로젝트명: Smart Premiere Ai
+##### 1. 프로젝트명: Smart Premiere IoT
 ##### 2. 작성자: 정도윤(Doyun Jung)
 ##### 3. 작성일자: 2022-06-05 (ver1.0)
 ##### 4. 이메일: rabbit.white at daum dot net
